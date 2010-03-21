@@ -28,7 +28,7 @@ import keyconf
 markerfacecolor."""
 
 
-class ColormappingPointRenderer(matplot3dext.renderers.interface.Renderer,
+class ColormapPointRenderer(matplot3dext.renderers.interface.Renderer,
 		keyconf.Configuration):
 	"""Renders point using markeredgecolor and markerfacecolor to specify
 	matplot3dext.colormapping.colormap.Colormap instances, used to color the
