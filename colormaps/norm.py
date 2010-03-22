@@ -18,10 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Last changed: 2010 Mar 21
+# Last changed: 2010 Mar 22
 # Developed since: Mar 2010
 
-import matplot3dext.colormap.interface
+import matplot3dext.colormaps.interface
 
 """Colormaps with built-in normalisation.  They are used to hand over
 colormaps and normalisation instance in one single object.  
@@ -30,7 +30,7 @@ The kind of objects matplot3dext.colormap.norm.NormColormaps can color depends
 on the capabilities of the normalisation object used."""
 
 
-class NormColormap(matplot3dext.colormap.interface.Colormap):
+class NormColormap(matplot3dext.colormaps.interface.Colormap):
 	"""Colormap with built-in normalisation.  Used to hand over colormaps
 	and normalisation instance in one single object."""
 

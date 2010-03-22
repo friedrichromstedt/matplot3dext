@@ -18,16 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Last changed: 2010 Mar 21
+# Last changed: 2010 Mar 22
 # Developed since: Mar 2010
 
 import numpy
+import matplot3dext.norms.interface
 
 """Normalisation of mplot3dext points onto the range [0.0, 1.0].  Used to 
 retrieve values for colormapping."""
 
 
-class ProjectionPointNorm(NormPoint):
+class ProjectionPointNorm(matplot3dext.norms.interface.Norm):
 	"""Normalises points by projecting their position onto a 3d direction.  
 	The normalisation result is the same on all planes perpendicular to the 
 	direction given.  Limits are set by two 3-vectors, for both the resulting 
