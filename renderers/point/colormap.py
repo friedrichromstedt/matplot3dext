@@ -78,4 +78,4 @@ class ColormapPointRenderer(matplot3dext.renderers.interface.Renderer,
 		
 		# Render.
 
-		backend.plot_point(point.position, **plot_kwargs)
+		backend.plot_point(point, **plot_kwargs)

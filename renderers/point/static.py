@@ -41,4 +41,4 @@ class StaticPointRenderer(matplot3dext.renderers.interface.Renderer,
 	def render(self, point, backend):
 		"""Render matplot3dext point POINT using backend BACKEND."""
 
-		backend.plot_point(point.position, **self)
+		backend.plot_point(point, **self)
