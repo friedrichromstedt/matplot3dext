@@ -51,12 +51,13 @@ class Point:
 		self.renderers_face = renderers_face
 
 		self.attached_lines = set()
+		self.attached_faces = set()
 
 	#
 	# Renderer addition ...
 	#
 
-	def add_renderers(self, 
+	def attach_renderers(self, 
 			renderers_point,
 			renderers_line,
 			renderers_face):
@@ -74,15 +75,31 @@ class Point:
 	# Connection methods ...
 	#
 
-	def add_line(self, line):
-		"""Attach Line LINE.  Do not update the line's renderers."""
+	def attach_line(self, line):
+		"""Attach Line LINE.  Do not update the LINE's renderers.  Attaches
+		also all Faces attached to LINE."""
 
 		self.attached_lines.add(line)
 
-	def remove_line(self, line):
-		"""Remove Line LINE."""
+		self.attached_faces |= line.attached_faces
+
+	def detach_line(self, line):
+		"""Detach Line LINE.  Also detaches the Faces attached to LINE."""
 
 		self.attached_lines.remove(line)
+		self.attached_faces -= line.attached_faces
+
+	def attach_face(self, face):
+		"""Attach Face FACE.  Do not update the FACE's renderers.  Assume that
+		the .attached_lines of the FACE are already attached (do not attach
+		the FACE's .attached_lines to self)."""
+
+		self.attached_faces.add(face)
+
+	def detach_face(self, face):
+		"""Detach Face FACE."""
+
+		self.attached_faces.remove(face)
 
 	#
 	# Subdivision framework ...
@@ -93,7 +110,7 @@ class Point:
 		
 		assert(subdivision.ndim == 0)
 
-		self.add_renderers(
+		self.attach_renderers(
 				renderers_point = subdivision.renderers_point,
 				renderers_line = subdivision.renderers_line,
 				renderers_face = subdivision.renderers_face)
@@ -108,4 +125,5 @@ class Point:
 		for line in self.attached_lines:
 			line.destroy()
 
-		del self.attached_lines
+		self.attached_lines = set()
+		self.attached_faces = set()

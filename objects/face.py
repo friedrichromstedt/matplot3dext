@@ -51,6 +51,11 @@ class Face:
 		for line in self.attached_lines:
 			line.attach_face(self)
 
+		# Attach to the points ...
+
+		for point in self.attached_points:
+			point.attach_face(self)
+
 		# Initialise the renderers ...
 
 		self.update_renderers_from_lines()
@@ -58,21 +63,28 @@ class Face:
 	def update_renderers_from_lines(self):
 		"""Loads the renderers from the lines."""
 
-		self.renderers_face = set()
-		for line in self.attached_lines:
-			self.renderers_face |= line.renderers_face
+		line1, line2, line3 = self.attached_lines
+		
+		self.renderers_face = \
+				line1.renderers_face & \
+				line2.renderers_face & \
+				line3.renderers_face
 
 	#
 	# Connection methods ...
 	#
 
-	def add_tetrahedron(self, tetrahedron):
-		"""Attach Tetrahedron TETRAHEDRON."""
+	def attach_tetrahedron(self, tetrahedron):
+		"""Attach Tetrahedron TETRAHEDRON.  Do not attach the TETREHEDRON to
+		any of the objects attached to this Face.  Assume that the common
+		Faces and Lines of self and the TETRAHEDRON are already attached to
+		the Face."""
 
 		self.attached_tetrahedra.add(tetrahedron)
 
-	def remove_tetrahedron(self, tetrahedron):
-		"""Remove Tetrahedron TETRAHEDRON."""
+	def detach_tetrahedron(self, tetrahedron):
+		"""Remove Tetrahedron TETRAHEDRON.  Do not detach the TETREHEDRON from
+		any of the objects attached to this Face."""
 
 		self.attached_tetrahedra.remove(tetrahedron)
 
@@ -90,9 +102,9 @@ class Face:
 
 		# Find the attached points, and be able to associate them with the
 		# lines.
-		point23, = line1.attached_points & line2.attached_points
+		point23, = line2.attached_points & line3.attached_points
 		point13, = line1.attached_points & line3.attached_points
-		point12, = line2.attached_points & line3.attached_points
+		point12, = line1.attached_points & line2.attached_points
 
 		new_point = subdivision.get_subdivision_point()
 		
@@ -113,14 +125,59 @@ class Face:
 
 		for tetrahedron in self.attached_tetrahedra:
 
-			# Find the surrounding faces.
-			face1, face2, face3 = tetrahedron.attached_faces - set([self])
+			# Find the extern faces.
+			ext_face1, ext_face2, ext_face3 = \
+					tetrahedron.attached_faces - set([self])
 			
+			# Find the extern point.
+			ext_point, = \
+					ext_face1.attached_points & \
+					ext_face2.attached_points & \
+					ext_face3.attached_points
+
+			# Find the new intern lines.
+			int_lines = set()
+			for new_face in new_faces:
+				int_lines |= new_face.attached_lines - self.attached_lines
+
+			# Find the new intern points.
+			int_points = set()
+			for int_line in int_lines:
+				int_points |= int_line.attached_points - self.attached_points
+
+			# Create the new extern lines.
+			for int_point in int_points:
+				# Stored in connectivity:
+				tmp_line = matplot3dext.objects.line.\
+						Line(int_point, ext_point)
+
+			# Create the new extern faces.
+			for int_line in int_lines:
+				# Find the two bounding edges:
+				int_point1, int_point2 = int_line.attached_points
+				ext_edge1, = \
+						int_point1.attached_lines & \
+						ext_point.attached_lines
+				ext_edge2, = \
+						int_point2.attached_lines & \
+						ext_point.attached_lines
+
+				# Create the new face, stored in connectivity:
+				tmp_face = Face(int_line, ext_edge1, ext_edge2)
+
 			# Create new tetrahedra.
 			new_tetrahedra = []
 			for new_face in new_faces:
-				new_tetrahedra.append(matplot3dext.object.tetrahedra.\
-						Tetrahedron(face1, face2, face3, new_face)
+				# Find the three bounding faces:
+				line1, line2, line3 = new_face.attached_lines
+				ext_face1, = line1.attached_faces & ext_point.attached_faces
+				ext_face2, = line2.attached_faces & ext_point.attached_faces
+				ext_face3, = line3.attached_faces & ext_point.attached_faces
+
+				# Add the tetrahedron:
+				new_tetrahedra.append(matplot3dext.objects.tetrahedra.\
+						Tetrahedron(new_face, 
+							ext_face1, ext_face2, ext_face3))
 
 			# Replace the existing tetrahedron with the new ones.
 			tetrahedron.replace_by(new_tetrahedra)
@@ -132,7 +189,14 @@ class Face:
 	#
 
 	def destroy(self):
-		"""Resolves references loops."""
+		"""Resolves references loops.  Detach the Face from all Lines
+		attached.  Detach the Face from all Points attached."""
+			
+		for line in self.attached_lines:
+			line.detach_face(self)
+	
+		for point in self.attached_points:
+			point.detach_face(self)
 
-		del self.attached_lines
-		del self.attached_points
+		self.attached_lines = set()
+		self.attached_points = set()

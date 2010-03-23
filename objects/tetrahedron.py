@@ -37,18 +37,6 @@ class Tetrahedron:
 
 		self.attached_faces = set([face1, face2, face3, face4])
 
-		# Find the lines ...
-
-		self.attached_lines = set()
-		for face in self.attached_faces:
-			self.attached_lines |= face.attached_lines
-
-		# Find the points ...
-
-		self.attached_points = set()
-		for face in self.attached_faces:
-			self.attached_points |= face.attached_points
-
 	#
 	# Subdivision methods ...
 	#
@@ -70,6 +58,8 @@ class Tetrahedron:
 		line24, = face2.attached_lines & face4.attached_lines
 		line34, = face3.attached_lines & face4.attached_lines
 
+		# Find the attached points, and be able to associate them with the 
+		# faces.
 		point123, = line12.attached_points & line13.attached_points
 		point124, = line12.attached_points & line14.attached_points
 		point134, = line13.attached_points & line14.attached_points
@@ -126,8 +116,10 @@ class Tetrahedron:
 	#
 
 	def destroy(self):
-		"""Resolve the reference loops."""
+		"""Resolve the reference loops.  Detach the Tetrahedron from all 
+		Faces attached."""
+		
+		for face in self.attached_faces:
+			face.detach_tetrahedron(self)
 
-		del self.attached_faces
-		del self.attached_lines
-		del self.attached_points
+		self.attached_faces = set()
