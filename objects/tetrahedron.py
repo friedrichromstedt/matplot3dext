@@ -20,6 +20,7 @@
 
 # Developed since: Mar 2010
 
+import numpy
 import matplot3dext.objects.line
 import matplot3dext.objects.face
 
@@ -36,13 +37,48 @@ class Tetrahedron:
 
 		self.attached_faces = set([face1, face2, face3, face4])
 
+		# Attach to the faces ...
+
+		for face in self.attached_faces:
+			face.attach_tetrahedron(self)
+
+		# Attach to all points ...
+
+		self.attached_points = set()
+		for face in self.attached_faces:
+			self.attached_points |= face.attached_points
+
+		for point in self.attached_points:
+			point.attach_tetrahedron(self)
+
+		# Create the inverse coordinate matrix ...
+
+		line1, line2, line3, line4, line5, line6 = \
+				face1.attached_lines | face2.attached_lines | \
+				face3.attached_lines | face4.attached_lines
+
+		self.base_point, \
+				self.end_point1, self.end_point2, self.end_point3 = \
+				line1.attached_points | line2.attached_points | \
+				line3.attached_points | line4.attached_points | \
+				line5.attached_points | line6.attached_points
+
+		self.end_points = [self.end_point1, self.end_point2, self.end_point3]
+
+		self.base = self.base_point.position
+		self.ends = numpy.asarray(
+				[self.end_point1.position,
+				 self.end_point2.position,
+				 self.end_point3.position]) - self.base
+		self.coordinate_matrix = numpy.linalg.inv(self.ends.T)
+
 		world.add_tetrahedron(self)
 
 	#
 	# Subdivision methods ...
 	#
 	
-	def subdivide(self, subdivision):
+	def subdivide(self, subdivision, new_point):
 		"""Perform a subdivision task on this Tetrahedron."""
 
 		assert(subdivision.ndim == 3)
@@ -66,9 +102,6 @@ class Tetrahedron:
 		point134, = line13.attached_points & line14.attached_points
 		point234, = line23.attached_points & line24.attached_points
 
-		# Create the new point.
-		new_point = subdivision.get_subdivision_point()
-		
 		# Create the new lines.
 		new_line123 = matplot3dext.objects.line.Line(point123, new_point)
 		new_line124 = matplot3dext.objects.line.Line(point124, new_point)
@@ -104,6 +137,8 @@ class Tetrahedron:
 		self.replace_by([new_tetrahdron1, new_tetrahedron2, 
 				new_tetrahedron3, new_tetrahedron4], subdivision.world)
 
+		return new_point
+
 	def replace_by(self, new_tetrahedra, world):
 		"""Replace this Tetrahdedron by Tetrahedron instances 
 		NEW_TETRAHEDRA."""
@@ -111,6 +146,17 @@ class Tetrahedron:
 		# All done.  Just destroy self.
 
 		self.destroy(world)
+
+	def inside(self, position):
+		"""Returns the coordinates if 3-vector POSITION is inside, else 
+		returns None."""
+
+		delta = position - self.base
+		
+		coordinates = numpy.dot(self.coordinate_matrix, delta)
+
+		if (coordinates >= 0).all() and (coordinates.sum() <= 1):
+			return coordinates
 
 	#
 	# Freeing memory ...
@@ -123,6 +169,12 @@ class Tetrahedron:
 		for face in self.attached_faces:
 			face.detach_tetrahedron(self)
 
+		for point in self.attached_points:
+			point.detach_detrahedron(self)
+
 		self.attached_faces = set()
+		self.attached_points = set()
+
+		# self.point1 etc. do not result in a reference loop.
 
 		world.remove_tetrahedron(self)

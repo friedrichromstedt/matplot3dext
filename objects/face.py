@@ -59,7 +59,66 @@ class Face:
 
 		self.update_renderers_from_lines()
 
+		# Calculate visibility ...
+
+		self.visible = True
+		for line in self.attached_lines:
+			self.visible = self.visible and line.visible
+
 		world.add_face(self)
+
+		# Check if we intersect some nearby line ...
+
+		# Check if we can accelerate the process.
+		accelerated = False
+
+		if point1.visible:
+			accelerated = True
+			starting_point = point1
+			excluded_lines = point2.attached_lines + point3.attached_lines
+
+		elif point2.visible:
+			accelerated = True
+			starting_point = point2
+			excluded_lines = point1.attached_lines + point3.attached_lines
+
+		elif point3.visible:
+			accelerated = True
+			starting_point = point3
+			excluded_lines = point1.attached_lines + point2.attached_lines
+
+		if accelerated:
+			# We can check in the nearby neighbourhood.
+
+			for face in starting_point.attached_faces:
+				opposite_line, = face.attached_lines - \
+						starting_point.attached_lines
+
+				if opposite_line in excluded_lines:
+					continue
+
+				intersection = world.intersect(self, opposite_line)
+				
+				if intersection is not None:
+					# This will destroy self:
+					intersection.intersect()
+
+					return
+
+		else:
+			# We must check against /all/ lines in the world.
+
+			for line in world.lines:
+				intersection = world.intersect(self, line)
+
+				if intersection is not None:
+					# This will destroy self:
+					intersection.intersect()
+
+					return
+			
+			# We had no intersection, hence we are obsolete.
+			self.destroy()
 
 	def update_renderers_from_lines(self):
 		"""Loads the renderers from the lines."""
@@ -93,7 +152,7 @@ class Face:
 	# Subdivision methods ...
 	#
 
-	def subdivide(self, subdivision):
+	def subdivide(self, subdivision, new_point):
 		"""Perform a subdivison task on this Face."""
 
 		assert(subdivision.ndim == 2)
@@ -106,8 +165,6 @@ class Face:
 		point23, = line2.attached_points & line3.attached_points
 		point13, = line1.attached_points & line3.attached_points
 		point12, = line1.attached_points & line2.attached_points
-
-		new_point = subdivision.get_subdivision_point()
 		
 		new_line23 = matplot3dext.objects.line.Line(point23, new_point)
 		new_line13 = matplot3dext.objects.line.Line(point13, new_point)
@@ -118,6 +175,8 @@ class Face:
 		new_face3 = Face(line3, new_line13, new_line23)
 
 		self.replace_by([new_face1, new_face2, new_face3], subdivison.world)
+
+		return new_point
 
 	def replace_by(self, new_faces, world):
 		"""Replace this Face by Face instances NEW_FACES."""

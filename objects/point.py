@@ -32,10 +32,18 @@ class Point:
 			renderers_point,
 			renderers_line,
 			renderers_face,
-			world):
-		"""Put point to position POSITION."""
+			world,
+			visible = None):
+		"""Put point to position POSITION.  RENDERERS_* are the applied 
+		renderers.  WORLD is the world in that to place the Point.  VISIBLE 
+		defaults to True, objects containing invisible Points will not be
+		drawn."""
+
+		if visible is None:
+			visible = True
 	
 		self.position = numpy.asarray(position)
+		self.visible = visible
 
 		# Initialise empty attributes ...
 
@@ -45,6 +53,7 @@ class Point:
 
 		self.attached_lines = set()
 		self.attached_faces = set()
+		self.attached_tetrahedra = set()
 
 		world.add_point(self)
 
@@ -96,6 +105,17 @@ class Point:
 
 		self.attached_faces.remove(face)
 
+	def attach_tetrahedron(self, tetrahedron):
+		"""Attach Tetrahedron TETRAHEDRON.  Assume that the .attached_faces
+		of  TETRAHEDRON are already attached."""
+
+		self.attached_tetrahedra.add(tetrahedron)
+
+	def detach_tetrahedron(self, tetrahedron):
+		"""Detach Tetrahedron TETRAHEDRON."""
+
+		self.attached_tetrahedra.remove(tetrahedron)
+
 	#
 	# Subdivision framework ...
 	#
@@ -110,6 +130,8 @@ class Point:
 				renderers_line = subdivision.renderers_line,
 				renderers_face = subdivision.renderers_face)
 
+		return self
+
 	#
 	# Freeing memory ...
 	#
@@ -122,5 +144,6 @@ class Point:
 
 		self.attached_lines = set()
 		self.attached_faces = set()
+		self.attached_tetrahedra = set()
 
 		world.remove_point(self)

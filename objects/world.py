@@ -20,10 +20,13 @@
 
 # Developed since: Mar 2010
 
+import numpy
 import matplot3dext.objects.point
 import matplot3dext.objects.line
 import matplot3dext.objects.face
 import matplot3dext.objects.tetrahedron
+import matplot3dext.objects.subdivision
+import matplot3dext.objects.intersection
 
 """matplot3dext world(s)."""
 
@@ -181,3 +184,138 @@ class World:
 
 	def remove_tetrahedron(self, tetrahedron):
 		self.tetrahedra.remove(tetrahedron)
+
+	#
+	# Intersection algorithms ...
+	#
+
+	def intersect(self, objectA, objectB,
+			renderers_point, renderers_line, renderers_face,
+			tol):
+		"""Intersects two objects OBJECTA and OBJECTB.  The objects must match
+		to intersect in 3D, i.e., pass in a Point and a Tetrahedron, or a Line
+		and a Face, or in reverse order.  If the objects do not intersect,
+		None is returned, otherwise the Intersection object for OBJECTA and 
+		OBJECTB is returned.
+		
+		RENDERERS_* are the renderers to apply in the end.
+
+		TOL is the tolerance passed to the Subdivision."""
+
+		# Extract the points ...
+
+		pointsA = list(objectA.attached_points)
+		pointsB = lisT(objectB.attached_points)
+
+		if len(pointsA) + len(pointsB) != 5:
+			raise ValueError('Objects do not intersect in a single point because of too many or too few dimensions.')
+		
+		# Extract the positions ...
+
+		baseA = pointsA[0].position
+		endsA = numpy.asarray([point.position for point in pointsA[1:]])
+
+		baseB = pointsB[0].position
+		endsB = numpy.asarray([point.position for point in pointsB[1:]])
+
+		# Extract the matrices ...
+
+		matrixA = endsA - baseA
+		matrixB = endsB - baseB
+
+		# Attempt to find a solution ...
+
+		try:
+			matrixCompound = numpy.hstack(matrixA.T, -matrixB.T)
+
+			coordinates = numpy.linalg.solve(matrixCompound, endA - endB)
+		except numpy.linalg.linalg.LinAlgError:
+			# Probably a singular matrix.
+			#
+			# Objects do not intersect or are parallel.
+
+			return None
+		
+		# Objects do intersect.
+		#
+		# Extract the coordinates for the Subdivisions.
+		coordinatesA = coordinates[:len(endsA)]
+		coordiantesB = coordinates[len(endsA):]
+
+		# Check the coordinates for being inside of the intersected 
+		# objects ...
+
+		insideA = (coordinatesA >= -tol).all() and \
+				(coordinatesA.sum() <= 1 + tol)
+		insideB = (coordinatesB >= -tol).all() and \
+				(coordinatesB.sum() <= 1 + tol)
+
+		# When the objects do not intersect, return None.
+		if (not insideA) or (not insideB):
+			return None
+		
+		# The object /do/ intersect ...
+
+		# Create the Subdivision objects.
+		subdivisionA = matplot3dext.objects.subdivision.Subdivision(
+				coordinates = coordinatesA,
+				base_point = baseA, end_points = endsA,
+				renderers_point = renderers_point,
+				renderers_line = renderers_line,
+				renderers_face = renderers_face,
+				tol = tol,
+				world = self)
+
+		subdivisionB = matplot3dext.objects.subdivision.Subdivison(
+				coordinates = coordinatesB,
+				base_point = baseB, end_points = endsB,
+				renderers_point = renderers_point,
+				renderers_line = renderers_line,
+				renderers_face = renderers_face,
+				tol = tol,
+				world = self)
+
+		return matplot3dext.objects.intersection.\
+				Intersection(subdivisionA, subdivisionB)
+
+	# 
+	# Creation methods ...
+	#
+
+	def create_point(self, position,
+			renderers_point, renderers_line, renderers_face,
+			tol):
+		"""Create a Point at position POSITION with RENDERERS_*.
+		
+		Returns the point created."""
+
+		# Try to find a Tetrahedron where the point is inside ...
+
+		for tetrahedron in self.tetrahedra:
+			candidate = tetrahedron.inside(position)
+			if candidate is not None:
+				# Create a subdivision for the tetrahedron.
+				subdivision = matplot3dext.objects.subdivision.Subdivison(
+						coordinates = candidate,
+						base_point = tetrahedron.base_point,
+						end_points = tetrahedron.end_points,
+						renderers_point = renderers_point,
+						renderers_line = renderers_line,
+						renderers_face = renderers_face,
+						tol = tol,
+						world = self)
+				
+				# Reduce the subdivision
+				return subdivision.reduce()
+
+		# Point is outside of known world, create an invisible Point ...
+
+		point = matplot3dext.objects.point.Point(
+				position = position,
+				renderers_point = renderers_point,
+				renderers_line = renderers_line,
+				renderers_face = renderers_face,
+				world = self,
+				visible = False)
+
+		return point

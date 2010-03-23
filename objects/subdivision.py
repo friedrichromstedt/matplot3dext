@@ -93,7 +93,7 @@ class Subdivion:
 	# Point resolving method ...
 	#
 
-	def get_subdivision_point(self):
+	def _get_subdivision_point(self):
 		"""Returns a new point with the renderers set."""
 
 		base_position = self.base_point.position
@@ -163,8 +163,7 @@ class Subdivion:
 	#
 
 	def reduce(self):
-		"""Reduce as far as possible, then find the object to subdivide,
-		and call its .subdivide method."""
+		"""Reduce as far as possible.  Returns the reduced Subdivision."""
 
 		# Check for negnectable end_points ...
 
@@ -182,15 +181,28 @@ class Subdivion:
 
 		# The Subdivision cannot be further reduced ...
 
+		return self
+
+	def subdivide(self, subdivision_point = None):
+		"""Assumes that the Subdivision has been .reduce()'ed.  Calls the
+		.subdivide() method of the appropriate object.  If the Subdivision's
+		.ndim > 0, SUBDIVISION_POINT can be given, else a new subdivision
+		Point will be created."""
+
+		if subdivision_point is None:
+			if self.ndim == 0:
+				raise RuntimeError('Cannot override the subdivision point of an ndim = 0 Subdivision.')
+			subdivision_point = self._get_subdivision_point()
+
 		if self.ndim == 0:
-			self.base_point.subdivide(self)
+			return self.base_point.subdivide(self)
 
 		elif self.ndim == 1:
 			# Find the connecting line.
 			line, = self.base_point.attached_lines & \
 					self.end_points[0].attached_lines
 
-			line.subdivide(self)
+			return line.subdivide(self, subdivision_point)
 
 		elif self.ndim == 2:
 			# Find the common face.
@@ -204,7 +216,7 @@ class Subdivion:
 					line2.attached_faces & \
 					line3.attached_faces
 
-			face.subdivide(self)
+			return face.subdivide(self, subdivision_point)
 
 		elif self.ndim == 3:
 			# Find the common tetrahedron.
@@ -229,7 +241,7 @@ class Subdivion:
 					face3.attached_tetrahedra & \
 					face4.attached_tetrahedra
 
-			tetrahedron.subdivide(self)
+			return tetrahedron.subdivide(self, subdivision_point)
 
 		else:
 			raise RuntimError("Subdivision of > 3-dimensional object.")

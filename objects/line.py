@@ -42,13 +42,71 @@ class Line:
 		# Attach to the points ...
 
 		point1.attach_line(self)
-		poitn2.attach_line(self)
+		point2.attach_line(self)
 
 		# Initialise the renderers ...
 		
 		self.update_renderers_from_points()
 
+		# Calculate visibility ...
+
+		self.visible = True
+		for point in self.attached_points:
+			self.visible = self.visible and point.visible
+
 		world.add_line(self)
+
+		# Check if we intersect some nearby face ...
+
+		starting_point = None
+
+		if point1.visible:
+			starting_point = point1
+			target_point = point2
+
+		elif point2.visible:
+			starting_point = point2
+			target_point = point1
+
+		if starting_point is not None:
+			# Check if we intersect with any of the opposite faces of the 
+			# tetrahedra attached to {starting_point}.  We exclude the
+			# tetrahedra attached to {target_point}, to avoid checking 
+			# against adjacent faces in the last step.
+
+			for tetrahedron in \
+					starting_point.attached_tetrahedra - \
+					target_point.attached_tetrahedra:
+				point1, point2, point3 = tetrahedron.attached_points - \
+						set([starting_point])
+				opposite_face, = \
+						point1.attached_faces & \
+						point2.attached_faces & \
+						point3.attached_faces
+
+				intersection = world.intersect(self, opposite_face)
+				if intersection is not None:
+					# This will destroy self by subdivision:
+					intersection.intersect()
+
+					return
+
+		else:
+			# This means that all of our two points are invisible, it follows 
+			# that we are completetly outside world.  Then, check with /all/ 
+			# faces of the world.
+
+			for face in world.faces:
+				intersection = world.intersect(self, face)
+				if intersection is not None:
+					# We will be destroyed by this by subdivision:
+					intersection.intersect()
+
+					return
+
+			# If we had no intersection with the existing world, we are
+			# completely obsolete:
+			self.destroy()
 
 	def update_renderers_from_points(self):
 		"""Loads the renderers from the points, and updates faces attached."""
@@ -60,7 +118,7 @@ class Line:
 
 		self.renderers_face = \
 				point1.renderers_face & point2.renderers_face
-		
+
 		for face in self.attached_faces:
 			face.update_renderers_from_lines()
 
@@ -88,19 +146,19 @@ class Line:
 	# Subdivision methods ...
 	#
 
-	def subdivide(self, subdivision):
+	def subdivide(self, subdivision, new_point):
 		"""Perform a subdivision task on this Line."""
 
 		assert(subdivision.ndim == 1)
 
 		point1, point2 = self.attached_points
-		
-		new_point = subdivision.get_subdivision_point()
 
 		line1 = Line(point1, new_point)
 		line2 = Line(point2, new_point)
 
 		self.replace_by([line1, line2], subdivision.world)
+
+		return new_point
 
 	def replace_by(self, new_lines, world):
 		"""Replace this Line by Line instances NEW_LINES."""
