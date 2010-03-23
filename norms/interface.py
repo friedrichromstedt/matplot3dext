@@ -18,7 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Last changed: 2010 Mar 21
 # Developed since: Mar 2010
 
 """Normalisation of objects onto the range [0.0, 1.0].  Used to retrieve

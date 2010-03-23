@@ -18,7 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Last changed: 2010 Mar 22
 # Developed since: Mar 2010
 
 import matplot3dext.renderers.interface

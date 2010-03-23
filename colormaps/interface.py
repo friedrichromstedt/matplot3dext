@@ -18,9 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Last changed: 2010 Mar 21
 # Developed since: Mar 2010
-# File version: 0.1.0b
 
 """matplot3dext Colormaps no longer map only real values, but also various
 kinds of objects onto the color space."""
