@@ -30,7 +30,7 @@ class Face:
 	"""matplot3dext faces.  Find their face renderers from the lines used for
 	their creation."""
 
-	def __init__(self, line1, line2, line3):
+	def __init__(self, line1, line2, line3, world):
 		"""Create new face between LINE1, LINE2, and LINE3.  Loads renderers
 		from the lines.  Extracts the points from the lines too.  The lines 
 		are matplot3dext.objects.line.Line instances."""
@@ -58,6 +58,8 @@ class Face:
 		# Initialise the renderers ...
 
 		self.update_renderers_from_lines()
+
+		world.add_face(self)
 
 	def update_renderers_from_lines(self):
 		"""Loads the renderers from the lines."""
@@ -115,9 +117,9 @@ class Face:
 		new_face2 = Face(line2, new_line23, new_line12)
 		new_face3 = Face(line3, new_line13, new_line23)
 
-		self.replace_by([new_face1, new_face2, new_face3])
+		self.replace_by([new_face1, new_face2, new_face3], subdivison.world)
 
-	def replace_by(self, new_faces):
+	def replace_by(self, new_faces, world):
 		"""Replace this Face by Face instances NEW_FACES."""
 
 		# For all attached tetrahetra, subdivide them ...
@@ -179,15 +181,15 @@ class Face:
 							ext_face1, ext_face2, ext_face3))
 
 			# Replace the existing tetrahedron with the new ones.
-			tetrahedron.replace_by(new_tetrahedra)
+			tetrahedron.replace_by(new_tetrahedra, world)
 
-		self.destroy()
+		self.destroy(world)
 	
 	#
 	# Freeing memory ...
 	#
 
-	def destroy(self):
+	def destroy(self, world):
 		"""Resolves references loops.  Detach the Face from all Lines
 		attached.  Detach the Face from all Points attached."""
 			
@@ -199,3 +201,5 @@ class Face:
 
 		self.attached_lines = set()
 		self.attached_points = set()
+
+		world.remove_face(self)

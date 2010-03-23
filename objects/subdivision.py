@@ -39,7 +39,8 @@ class Subdivion:
 			coordinates,
 			base_point, end_points,
 			renderers_point, renderers_line, renderers_face,
-			tol):
+			tol,
+			world):
 		"""COORDINATE is measured from BASE_POINT towards the END_POINTS list.  
 		All points are matplot3dext.objects.point.Point instances.  A 
 		coordinate is zero when it endpoint component is zero, and 1.0 when 
@@ -47,15 +48,20 @@ class Subdivion:
 		tolerance used when deciding whether a coordinate is 0 or 1.
 		
 		RENDERERS_POINT, RENDERERS_LINE, RENDERERS_FACE are sets of 
-		renderes to apply."""
+		renderes to apply.
 		
+		WORLD is the World where subdivision takes place.  It is needed when
+		later the WORLD changes."""
+		
+		# Initialise attributes ...
+
 		self.coordinates = numpy.asarray(coordinates)
 		self.base_point = base_point
 		self.end_points = end_points
 
-		# Initialise attributes ...
-
 		self.tol = tol
+
+		self.world = world
 
 		self.ndim = len(self.coordinates)
 		assert(self.ndim == len(self.end_points))

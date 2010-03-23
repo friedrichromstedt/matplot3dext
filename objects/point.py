@@ -29,18 +29,12 @@ class Point:
 	"""Matplot3dext point class."""
 
 	def __init__(self, position, 
-			renderers_point = None,
-			renderers_line = None,
-			renderers_face = None):
+			renderers_point,
+			renderers_line,
+			renderers_face,
+			world):
 		"""Put point to position POSITION."""
 	
-		if renderers_point is None:
-			renderers_point = set()
-		if renderers_line is None:
-			renderers_line = set()
-		if renderers_face is None:
-			renderers_face = set()
-
 		self.position = numpy.asarray(position)
 
 		# Initialise empty attributes ...
@@ -51,6 +45,8 @@ class Point:
 
 		self.attached_lines = set()
 		self.attached_faces = set()
+
+		world.add_point(self)
 
 	#
 	# Renderer addition ...
@@ -118,7 +114,7 @@ class Point:
 	# Freeing memory ...
 	#
 
-	def destroy(self):
+	def destroy(self, world):
 		"""Resolves reference loops.  Destroys all attached lines too."""
 
 		for line in self.attached_lines:
@@ -126,3 +122,5 @@ class Point:
 
 		self.attached_lines = set()
 		self.attached_faces = set()
+
+		world.remove_point(self)

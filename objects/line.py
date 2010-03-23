@@ -29,7 +29,7 @@ class Line:
 	"""matplot3dext lines.  Find their line and face renderers from the 
 	points used for their creation."""
 
-	def __init__(self, point1, point2):
+	def __init__(self, point1, point2, world):
 		"""Create new line between POINT1 and POINT2.  Load renderers from
 		the points.  POINT1 and POINT2 are matplot3dext.objects.point.Point
 		instances."""
@@ -47,6 +47,8 @@ class Line:
 		# Initialise the renderers ...
 		
 		self.update_renderers_from_points()
+
+		world.add_line(self)
 
 	def update_renderers_from_points(self):
 		"""Loads the renderers from the points, and updates faces attached."""
@@ -98,9 +100,9 @@ class Line:
 		line1 = Line(point1, new_point)
 		line2 = Line(point2, new_point)
 
-		self.replace_by([line1, line2])
+		self.replace_by([line1, line2], subdivision.world)
 
-	def replace_by(self, new_lines):
+	def replace_by(self, new_lines, world):
 		"""Replace this Line by Line instances NEW_LINES."""
 	
 		# For all attached faces, subdivide them ...
@@ -139,9 +141,9 @@ class Line:
 					new_line, ext_edge1, ext_edge2))
 
 			# Replace the existing face with the new faces.
-			face.replace_by(new_faces)
+			face.replace_by(new_faces, world)
 
-		self.destroy()
+		self.destroy(world)
 		
 	#
 	# Freeing memory ...
@@ -159,3 +161,5 @@ class Line:
 
 		self.attached_points = set()
 		self.attached_faces = set()
+
+		world.remove_line(self)

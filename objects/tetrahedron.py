@@ -29,12 +29,14 @@ import matplot3dext.objects.face
 class Tetrahedron:
 	"""matplot3dext tetrahedra."""
 
-	def __init__(self, face1, face2, face3, face4):
+	def __init__(self, face1, face2, face3, face4, world):
 		"""Create new tetrahedron between FACE1..4.  Extracts the lines and
 		the points from the faces too.  The faces are matplot3dext.objects.\
 		face.Face instances."""
 
 		self.attached_faces = set([face1, face2, face3, face4])
+
+		world.add_tetrahedron(self)
 
 	#
 	# Subdivision methods ...
@@ -100,21 +102,21 @@ class Tetrahedron:
 				face4, new_face14, new_face24, new_face34)
 
 		self.replace_by([new_tetrahdron1, new_tetrahedron2, 
-				new_tetrahedron3, new_tetrahedron4])
+				new_tetrahedron3, new_tetrahedron4], subdivision.world)
 
-	def replace_by(self, new_tetrahedra):
+	def replace_by(self, new_tetrahedra, world):
 		"""Replace this Tetrahdedron by Tetrahedron instances 
 		NEW_TETRAHEDRA."""
 		
 		# All done.  Just destroy self.
 
-		self.destroy()
+		self.destroy(world)
 
 	#
 	# Freeing memory ...
 	#
 
-	def destroy(self):
+	def destroy(self, world):
 		"""Resolve the reference loops.  Detach the Tetrahedron from all 
 		Faces attached."""
 		
@@ -122,3 +124,5 @@ class Tetrahedron:
 			face.detach_tetrahedron(self)
 
 		self.attached_faces = set()
+
+		world.remove_tetrahedron(self)
